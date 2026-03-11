@@ -1,7 +1,8 @@
 document.getElementById("btn-register").addEventListener("click", register);
+
 function register() {
-    password: document.getElementById("user-password").value,
-    repeatPassword: document.getElementById("user-repeat-password").value
+    const password = document.getElementById("user-password").value;
+    const repeatPassword = document.getElementById("user-repeat-password").value;
 
     if(password !== repeatPassword) {
         alert("Las contraseñas no coinciden");
@@ -16,5 +17,21 @@ function register() {
         password: document.getElementById("user-password").value,
         
     }
+    //endpoint
+    fetch('api/users',{
+        method:'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }). then(response => response.json())
+    .then(result => {
+        if(result.success) {
+            alert("Usuario se guardo correctamente");
+        } else {
+            alert(result.message);
+        }
+    })
+    .catch(error => {
+        console.error(error);
+    })
+
 }
-    

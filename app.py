@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
@@ -15,6 +15,17 @@ def signup():
 def welcome():
     return render_template('welcome.html')
 
+@app.route('/api/users', methods=['POST'])
+def create_user():
+    data = request.get_json()
+
+    name = data.get("name")
+    email = data.get("email")
+    password = data.get("password")
+
+    print(f"nombre: {name}, email: {email}, password: {password}")
+
+    return jsonify({"success": True,})
 
 # underscore methods and properties
 if __name__ == '__main__':
