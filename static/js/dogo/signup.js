@@ -18,7 +18,7 @@ function register() {
         
     }
     //endpoint
-    fetch('api/users',{
+    fetch('api/user',{
         method:'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(data)
