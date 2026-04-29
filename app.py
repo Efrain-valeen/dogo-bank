@@ -1,10 +1,13 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
+from entities.log import Log
 from entities.user import User
 from flask_login import LoginManager, login_user, login_required, logout_user
 from dotenv import load_dotenv
 import os
 from flask_login import current_user
 from entities.account import Account
+from enums.log_type import LogType
+
 
 load_dotenv()
 
@@ -54,20 +57,28 @@ def login():
 
     email = data.get("email")
     password = data.get("password")
+    profile = data.get("profile")
+    is_active = data.get("is_active")
 
-    user = User.check_login(email, password)
+    user = User.check_login(email, password, profile, is_active)
     if user:
 
-        login_user(user)  
+        login_user(user) 
+
+        # Guardar el log de inicio de sesion
+        Log.save_log(user, "Inicio de sesion", LogType.LOGIN)
+        
         return jsonify({
             "success": True,
-            "message": "Inicio de sesión exitoso"
+            "message": "Sesión iniciada correctamente"
         }), 200
     else:
         return jsonify({
             "success": False,
-            "message": "Credenciales incorrectas"
+            "message": "Los datos de acceso ingresados no son correctos."
         }), 401
+
+       
 @login_manager.user_loader
 def load_user(user_id):
     return User.get_by_id(user_id)  

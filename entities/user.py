@@ -1,14 +1,22 @@
 import pymysql
+from enums.profile import Profile
+from entities.permission import Permission
 from persistence.db import get_connection
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 class User(UserMixin):
-    def __init__(self, id: int, name:str, email:str, password:str):
+    def __init__(self, id: int, name:str, email:str, 
+                 password:str, profile: Profile, 
+                 permissions: list, is_active: bool):
+        
         self.id= id
         self.name = name
         self.email = email
         self.password = password
-    
+        self.profile = profile
+        self.permissions = permissions
+        self.is_active = is_active
+
     def check_email_exists(email) -> bool:
         """
             Verifica si la cuenta de correo electrónico ya se encuentra registrada.
@@ -64,7 +72,7 @@ class User(UserMixin):
             connection = get_connection()
             cursor = connection.cursor(pymysql.cursors.DictCursor)
 
-            sql = "SELECT id, name, email, password FROM user WHERE email = %s"
+            sql = "SELECT id, name, email, password, profile, is_active FROM user WHERE email = %s"
             cursor.execute(sql, (email,))
 
             user = cursor.fetchone()
@@ -73,11 +81,14 @@ class User(UserMixin):
             connection.close()
 
             if user and check_password_hash(user["password"], password):
+                permission = Permission.get_by_user(user["id"])
                 return User(
                     user["id"],
                     user["name"],
                     user["email"],
-                    ""
+                    user["password"],
+                    user["profile"],
+                    user["is_active"]
                 )
             
 
@@ -92,7 +103,7 @@ class User(UserMixin):
             connection = get_connection()
             cursor = connection.cursor(pymysql.cursors.DictCursor)
 
-            sql = "SELECT id, name, email, password FROM user WHERE id = %s"
+            sql = "SELECT id, name, email, password, profile, is_active FROM user WHERE id = %s"
             cursor.execute(sql, (id,))
 
             user = cursor.fetchone()
@@ -101,11 +112,15 @@ class User(UserMixin):
             connection.close()
 
             if user:
+                permission = Permission.get_by_user(user["id"])
                 return User(
                     user["id"],
                     user["name"],
                     user["email"],
-                    user["password"]
+                    user["password"],
+                    user["profile"],
+                    permission,
+                    user["is_active"]
                 )
             
             return None
