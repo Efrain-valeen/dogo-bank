@@ -1,13 +1,11 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from entities.log import Log
 from entities.user import User
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from dotenv import load_dotenv
 import os
-from flask_login import current_user
 from entities.account import Account
 from enums.log_type import LogType
-
 
 load_dotenv()
 
@@ -18,9 +16,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'index'
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/signup')
 def signup():
@@ -32,7 +32,12 @@ def signup():
 def welcome():
     account = Account.get_account_by_user(current_user.id)
 
-    return render_template('welcome.html', account=account)
+    balance = 0
+    if account:
+        balance = account.get_balance()
+
+    return render_template('welcome.html', account=account, balance=balance)
+
 
 @app.route('/api/user', methods=['POST'])
 def create_user():
@@ -43,12 +48,12 @@ def create_user():
     password = data.get("password")
 
     if User.check_email_exists(email):
-        return jsonify({"success": False, "message": "El correo electrónico ingresado ya se encuentra registrado."}), 409
+        return jsonify({"success": False}), 409
 
     if User.save(name, email, password):
-        return jsonify({"success": True, "message": "Su cuenta fue creada correctamente."}), 201
-    else:
-        return jsonify({"success": False, "message": "Ocurrió un error al crear su cuenta. Intente de nuevo"}), 500
+        return jsonify({"success": True}), 201
+
+    return jsonify({"success": False}), 500
 
 
 @app.route('/api/login', methods=['POST'])
@@ -57,31 +62,21 @@ def login():
 
     email = data.get("email")
     password = data.get("password")
-    profile = data.get("profile")
-    is_active = data.get("is_active")
 
-    user = User.check_login(email, password, profile, is_active)
+    user = User.check_login(email, password)
+
     if user:
+        login_user(user)
+        Log.save_log(user, "Inicio de sesión", LogType.LOGIN)
 
-        login_user(user) 
+        return jsonify({"success": True}), 200
 
-        # Guardar el log de inicio de sesion
-        Log.save_log(user, "Inicio de sesion", LogType.LOGIN)
-        
-        return jsonify({
-            "success": True,
-            "message": "Sesión iniciada correctamente"
-        }), 200
-    else:
-        return jsonify({
-            "success": False,
-            "message": "Los datos de acceso ingresados no son correctos."
-        }), 401
+    return jsonify({"success": False}), 401
 
-       
+
 @login_manager.user_loader
 def load_user(user_id):
-    return User.get_by_id(user_id)  
+    return User.get_by_id(user_id)
 
 
 @app.route('/logout')
@@ -89,7 +84,6 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-# underscore methods and properties
+
 if __name__ == '__main__':
     app.run()
-

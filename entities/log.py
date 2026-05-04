@@ -12,8 +12,6 @@ class Log:
         self.description = description
         self.type = type
 
-
-    # Metodo para guardar un nuevo log en la base de datos
     def save_log(user: User, description: str, type: LogType):
         try:
             connection = get_connection()
@@ -25,8 +23,7 @@ class Log:
 
             cursor.close()
             connection.close()
-        # Print del error por si falla la conexion a la base de datos o la consulta SQL
+
         except Exception as e:
             print(f"Error al guardar el log: {e}")
             return False
-        
